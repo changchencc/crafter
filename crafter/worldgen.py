@@ -29,6 +29,15 @@ def _set_material(world, pos, player, tunnels, simplex):
     water -= 2 * start
     mountain = simplex(x, y, 0, {15: 1, 5: 0.3})
     mountain -= 4 * start + 0.3 * water
+    if world.level in [8, 10]:
+        coal_uni_thr = 0.45
+        iron_uni_thr = 0.45
+        iron_simplex_thr = 0.0
+    else:  # original setting
+        coal_uni_thr = 0.85
+        iron_uni_thr = 0.75
+        iron_simplex_thr = 0.4
+
     if start > 0.5:
         world[x, y] = "grass"
     elif mountain > 0.15:
@@ -40,9 +49,9 @@ def _set_material(world, pos, player, tunnels, simplex):
         elif simplex(x / 5, 2 * y, 7, 3) > 0.4:  # vertical tunnle
             world[x, y] = "path"
             tunnels[x, y] = True
-        elif simplex(x, y, 1, 8) > 0 and uniform() > 0.85:
+        elif simplex(x, y, 1, 8) > 0 and uniform() > coal_uni_thr:
             world[x, y] = "coal"
-        elif simplex(x, y, 2, 6) > 0.4 and uniform() > 0.75:
+        elif simplex(x, y, 2, 6) > iron_simplex_thr and uniform() > iron_uni_thr:
             world[x, y] = "iron"
         elif mountain > 0.18 and uniform() > 0.994:
             world[x, y] = "diamond"
