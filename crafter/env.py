@@ -120,11 +120,9 @@ class Env(BaseClass):
         if unlocked:
             self._unlocked |= unlocked
             reward += 1.0
-        if self.level in [7]:
-            reward += 0.02
         dead = self._player.health <= 0
         over = self._length and self._step >= self._length
-        if self.level in [1]:
+        if self.level in [1, 11]:
             done = over
         else:
             done = dead or over
