@@ -71,12 +71,12 @@ class Player(Object):
         self.inventory = {
             name: info["initial"] for name, info in constants.items.items()
         }
-        if world.level in [2, 3, 4]:
-            self.inventory["stone_sword"] = 1
-        if world.level in [5]:
-            self.inventory["wood_sword"] = 1
-        if world.level in [9, 10]:
-            self.inventory["stone_pickaxe"] = 1
+        # if world.level in [2, 3, 4]:
+        #     self.inventory["stone_sword"] = 1
+        # if world.level in [5]:
+        #     self.inventory["wood_sword"] = 1
+        # if world.level in [9, 10]:
+        #     self.inventory["stone_pickaxe"] = 1
         self.achievements = {name: 0 for name in constants.achievements}
         self.action = "noop"
         self.sleeping = False

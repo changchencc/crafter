@@ -29,14 +29,10 @@ def _set_material(world, pos, player, tunnels, simplex):
     water -= 2 * start
     mountain = simplex(x, y, 0, {15: 1, 5: 0.3})
     mountain -= 4 * start + 0.3 * water
-    if world.level in [8, 10]:
-        coal_uni_thr = 0.45
-        iron_uni_thr = 0.45
-        iron_simplex_thr = 0.0
-    else:  # original setting
-        coal_uni_thr = 0.85
-        iron_uni_thr = 0.75
-        iron_simplex_thr = 0.4
+    # original setting
+    coal_uni_thr = 0.85
+    iron_uni_thr = 0.75
+    iron_simplex_thr = 0.4
 
     if start > 0.5:
         world[x, y] = "grass"
@@ -80,10 +76,10 @@ def _set_object(world, pos, player, tunnels):
     elif dist > 3 and material == "grass" and uniform() > 0.985:
         world.add(objects.Cow(world, (x, y)))
     elif dist > 10 and uniform() > 0.993:
-        if world.level in [1, 3, 4, 5, 6]:
+        if world.level in [4]:
             world.add(objects.Zombie(world, (x, y), player))
     elif material == "path" and tunnels[x, y] and uniform() > 0.95:
-        if world.level in [1, 2, 4, 5, 6]:
+        if world.level in [4]:
             world.add(objects.Skeleton(world, (x, y), player))
 
 

@@ -94,7 +94,16 @@ class Env(BaseClass):
         self._world.add(self._player)
         self._unlocked = set()
         worldgen.generate_world(self._world, self._player)
-        return self._obs()
+
+        info = {
+            "inventory": self._player.inventory.copy(),
+            "achievements": self._player.achievements.copy(),
+            "discount": 1,
+            "semantic": self._sem_view(),
+            "player_pos": self._player.pos,
+            "reward": 0,
+        }
+        return self._obs(), info
 
     def step(self, action):
         self._step += 1
@@ -110,7 +119,10 @@ class Env(BaseClass):
                 # if self._player.distance(center) < 4 * max(self._view):
                 self._balance_chunk(chunk, objs)
         obs = self._obs()
-        reward = (self._player.health - self._last_health) / 10
+        if self.level in [1]:
+            reward = 0
+        else:
+            reward = (self._player.health - self._last_health) / 10
         self._last_health = self._player.health
         unlocked = {
             name
@@ -122,7 +134,7 @@ class Env(BaseClass):
             reward += 1.0
         dead = self._player.health <= 0
         over = self._length and self._step >= self._length
-        if self.level in [1, 11]:
+        if self.level in [1, 2]:
             done = over
         else:
             done = dead or over
@@ -161,7 +173,7 @@ class Env(BaseClass):
 
     def _balance_chunk(self, chunk, objs):
         light = self._world.daylight
-        if self.level in [1, 3, 4, 5, 6]:
+        if self.level in [4]:
             self._balance_object(
                 chunk,
                 objs,
@@ -177,7 +189,7 @@ class Env(BaseClass):
                     3.5 - 3 * light,
                 ),
             )
-        if self.level in [1, 2, 4, 5, 6]:
+        if self.level in [4]:
             self._balance_object(
                 chunk,
                 objs,
