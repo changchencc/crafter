@@ -29,6 +29,8 @@ def main():
     parser.add_argument(
         "--death", type=str, default="reset", choices=["continue", "reset", "quit"]
     )
+    parser.add_argument("--globalview", type=boolean, default=False)
+    parser.add_argument("--blacksheepwall", type=boolean, default=False)
     args = parser.parse_args()
 
     keymap = {
@@ -66,6 +68,7 @@ def main():
         view=args.view,
         length=args.length,
         seed=args.seed,
+        blacksheepwall=args.blacksheepwall
     )
     env = crafter.Recorder(env, args.record)
     env.reset()
@@ -76,7 +79,10 @@ def main():
     print("Diamonds exist:", env._world.count("diamond"))
 
     pygame.init()
-    screen = pygame.display.set_mode(args.window)
+    if args.globalview:
+        screen = pygame.display.set_mode([args.window[0]*2, args.window[1]])
+    else:
+        screen = pygame.display.set_mode(args.window)
     clock = pygame.time.Clock()
     running = True
     while running:
@@ -87,6 +93,12 @@ def main():
             image = Image.fromarray(image)
             image = image.resize(args.window, resample=Image.NEAREST)
             image = np.array(image)
+        if args.globalview:
+            globalview = env.globalview_render(size)
+            globalview = Image.fromarray(globalview)
+            globalview = globalview.resize(args.window, resample=Image.NEAREST)
+            globalview = np.array(globalview)
+            image = np.concatenate([globalview, image], axis=1)
         surface = pygame.surfarray.make_surface(image.transpose((1, 0, 2)))
         screen.blit(surface, (0, 0))
         pygame.display.flip()

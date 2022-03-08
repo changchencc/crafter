@@ -141,8 +141,66 @@ class Textures:
 
 
 class GlobalView:
+    def __init__(self, world, textures, local_grid,
+        blacksheepwall=False):
+        self._world = world
+        self._textures = textures
+        self._local_grid = np.array(local_grid)
+        self._local_offset = self._local_grid // 2
+        self._area = np.array(self._world.area)
+        self._global_grid = self._area
+        self._global_offset = self._area // 2
+        self._global_center = self._global_grid//2
+        self._center = None
+        self._blacksheepwall = blacksheepwall
+        if self._blacksheepwall:
+            self._mask = np.ones(tuple(self._global_grid))
 
-    pass
+    def __call__(self, player, unit):
+        self._unit = np.array(unit)
+        # draw global topography
+        if self._blacksheepwall:
+            local_center = np.array(player.pos)
+            for x in range(self._local_grid[0]):
+                for y in range(self._local_grid[1]):
+                    pos = local_center + np.array([x, y]) - self._local_offset
+                    if not _inside((0, 0), pos, self._area):
+                        continue
+                    self._mask[pos[0], pos[1]] = 0
+        canvas = np.zeros(tuple(self._global_grid * unit) + (3,), np.uint8)
+        for x in range(self._global_grid[0]):
+            for y in range(self._global_grid[1]):
+                pos = self._global_center + np.array([x, y]) - self._global_offset
+                if not _inside((0, 0), pos, self._area):
+                    continue
+                if self._blacksheepwall:
+                    if self._mask[pos[0], pos[1]]:
+                        continue
+                texture = self._textures.get(self._world[pos][0], unit)
+                _draw(canvas, np.array([x, y]) * unit, texture)
+                if self._blacksheepwall:
+                    pos = np.array([x, y]) - local_center + self._local_offset
+                    if not _inside((0, 0), pos, self._local_grid):
+                        xy = np.meshgrid(
+                            np.arange(x*unit[0],(x+1)*unit[0]),
+                            np.arange(y*unit[1],(y+1)*unit[1]))
+                        canvas[tuple(xy)] = 0.5 * canvas[tuple(xy)]
+        # draw dynamic entities
+        if self._blacksheepwall:
+            center = local_center
+            grid = self._local_grid
+            offset = self._local_offset
+        else:
+            center = self._global_center
+            grid = self._global_grid
+            offset = self._global_offset
+        for obj in self._world.objects:
+            pos = obj.pos - center + offset
+            if not _inside((0, 0), pos, grid):
+                continue
+            texture = self._textures.get(obj.texture, unit)
+            _draw_alpha(canvas, obj.pos * unit, texture)
+        return canvas
 
 
 class UncoverView:

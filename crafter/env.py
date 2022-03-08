@@ -33,6 +33,7 @@ class Env(BaseClass):
         reward=True,
         length=10000,
         seed=None,
+        blacksheepwall=False
     ):
         view = np.array(view if hasattr(view, "__len__") else (view, view))
         size = np.array(size if hasattr(size, "__len__") else (size, size))
@@ -48,6 +49,9 @@ class Env(BaseClass):
         self._world = engine.World(level, area, constants.materials, (12, 12))
         self._textures = engine.Textures(constants.root / "assets")
         item_rows = int(np.ceil(len(constants.items) / view[0]))
+        self._global_view = engine.GlobalView(
+            self._world, self._textures, [view[0], view[1] - item_rows],
+            blacksheepwall=blacksheepwall)
         self._local_view = engine.LocalView(
             self._world, self._textures, [view[0], view[1] - item_rows]
         )
@@ -109,7 +113,7 @@ class Env(BaseClass):
                 # center = (xmax - xmin) // 2, (ymax - ymin) // 2
                 # if self._player.distance(center) < 4 * max(self._view):
                 self._balance_chunk(chunk, objs)
-        obs = self._obs()
+        obs, global_view = self._obs()
         reward = (self._player.health - self._last_health) / 10
         self._last_health = self._player.health
         unlocked = {
@@ -135,10 +139,17 @@ class Env(BaseClass):
             "semantic": self._sem_view(),
             "player_pos": self._player.pos,
             "reward": reward,
+            "global_view": global_view,
         }
         if not self._reward:
             reward = 0.0
         return obs, reward, done, info
+
+    def globalview_render(self, size=None):
+        size = size or self._size
+        unit = size // self._view # using same unit with localview
+        globalview = np.array(self._global_view(self._player, unit), np.uint8)
+        return globalview.transpose((1, 0, 2))
 
     def render(self, size=None):
         size = size or self._size
@@ -153,7 +164,7 @@ class Env(BaseClass):
         return canvas.transpose((1, 0, 2))
 
     def _obs(self):
-        return self.render()
+        return self.render(), self.globalview_render()
 
     def _update_time(self):
         # https://www.desmos.com/calculator/grfbc6rs3h
