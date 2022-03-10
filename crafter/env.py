@@ -145,10 +145,8 @@ class Env(BaseClass):
             reward = 0.0
         return obs, reward, done, info
 
-    def globalview_render(self, size=None):
-        size = size or self._size
-        unit = size // self._view # using same unit with localview
-        globalview = np.array(self._global_view(self._player, unit), np.uint8)
+    def globalview_render(self):
+        globalview = np.array(self._global_view(self._player), np.uint8)
         return globalview.transpose((1, 0, 2))
 
     def render(self, size=None):
@@ -164,6 +162,13 @@ class Env(BaseClass):
         return canvas.transpose((1, 0, 2))
 
     def _obs(self):
+        import time
+        st = time.time()
+        localview = self.render()
+        print('localview time', time.time() - st)
+        st = time.time()
+        globalview = self.globalview_render()
+        print('globalview time', time.time() - st)
         return self.render(), self.globalview_render()
 
     def _update_time(self):
