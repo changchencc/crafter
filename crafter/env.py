@@ -113,7 +113,8 @@ class Env(BaseClass):
                 # center = (xmax - xmin) // 2, (ymax - ymin) // 2
                 # if self._player.distance(center) < 4 * max(self._view):
                 self._balance_chunk(chunk, objs)
-        obs, global_view = self._obs()
+        obs = self._obs()
+        global_view = self._globalmap()
         reward = (self._player.health - self._last_health) / 10
         self._last_health = self._player.health
         unlocked = {
@@ -162,7 +163,10 @@ class Env(BaseClass):
         return canvas.transpose((1, 0, 2))
 
     def _obs(self):
-        return self.render(), self.globalview_render()
+        return self.render()
+
+    def _globalmap(self):
+        return self.globalview_render()
 
     def _update_time(self):
         # https://www.desmos.com/calculator/grfbc6rs3h
