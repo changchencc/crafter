@@ -27,14 +27,15 @@ INDICES = {
     "player-down": 14,
     "player-left": 15,
     "player-right": 16,
-    "plant": 17,
-    "cow": 18,
-    "zombie": 19,
-    "skeleton": 20,
-    "arrow-up": 21,
-    "arrow-down": 22,
-    "arrow-left": 23,
-    "arrow-right": 24,
+    "player-sleep": 17,
+    "plant": 18,
+    "cow": 19,
+    "zombie": 20,
+    "skeleton": 21,
+    "arrow-up": 22,
+    "arrow-down": 23,
+    "arrow-left": 24,
+    "arrow-right": 25,
 }
 
 
