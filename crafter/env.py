@@ -162,13 +162,6 @@ class Env(BaseClass):
         return canvas.transpose((1, 0, 2))
 
     def _obs(self):
-        import time
-        st = time.time()
-        localview = self.render()
-        print('localview time', time.time() - st)
-        st = time.time()
-        globalview = self.globalview_render()
-        print('globalview time', time.time() - st)
         return self.render(), self.globalview_render()
 
     def _update_time(self):
