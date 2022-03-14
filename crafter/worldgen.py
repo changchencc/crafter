@@ -16,7 +16,6 @@ def generate_world(world, player):
     for x in range(world.area[0]):
         for y in range(world.area[1]):
             _set_object(world, (x, y), player, tunnels)
-    world.make_map()
 
 
 def _set_material(world, pos, player, tunnels, simplex):

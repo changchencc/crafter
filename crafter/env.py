@@ -33,12 +33,13 @@ class Env(BaseClass):
         reward=True,
         length=10000,
         seed=None,
-        blacksheepwall=False
+        global_view_type='notgiven' # {notgiven|fullview|visited}
     ):
         view = np.array(view if hasattr(view, "__len__") else (view, view))
         size = np.array(size if hasattr(size, "__len__") else (size, size))
         seed = np.random.randint(0, 2 ** 31 - 1) if seed is None else seed
         self.level = level
+        self._global_view_type = global_view_type
         self._area = area
         self._view = view
         self._size = size
@@ -49,9 +50,11 @@ class Env(BaseClass):
         self._world = engine.World(level, area, constants.materials, (12, 12))
         self._textures = engine.Textures(constants.root / "assets")
         item_rows = int(np.ceil(len(constants.items) / view[0]))
-        self._global_view = engine.GlobalView(
-            self._world, self._textures, [view[0], view[1] - item_rows],
-            blacksheepwall=blacksheepwall)
+        if global_view_type != 'notgiven':
+            self._global_view = engine.GlobalView(
+                self._world, self._textures, [view[0], view[1] - item_rows],
+                view_type=global_view_type
+            )
         self._local_view = engine.LocalView(
             self._world, self._textures, [view[0], view[1] - item_rows]
         )
@@ -98,7 +101,10 @@ class Env(BaseClass):
         self._world.add(self._player)
         self._unlocked = set()
         worldgen.generate_world(self._world, self._player)
-        return self._obs()
+        if self._global_view_type == 'notgiven':
+            return self._obs()
+        else:
+            return self._obs(), self.global_view_render()
 
     def step(self, action):
         self._step += 1
@@ -114,7 +120,6 @@ class Env(BaseClass):
                 # if self._player.distance(center) < 4 * max(self._view):
                 self._balance_chunk(chunk, objs)
         obs = self._obs()
-        global_view = self._globalmap()
         reward = (self._player.health - self._last_health) / 10
         self._last_health = self._player.health
         unlocked = {
@@ -140,15 +145,18 @@ class Env(BaseClass):
             "semantic": self._sem_view(),
             "player_pos": self._player.pos,
             "reward": reward,
-            "global_view": global_view,
         }
+        if self._global_view_type != 'notgiven':
+            info.update(
+                {"global_view": self.global_view_render()}
+            )
         if not self._reward:
             reward = 0.0
         return obs, reward, done, info
 
-    def globalview_render(self):
-        globalview = np.array(self._global_view(self._player), np.uint8)
-        return globalview.transpose((1, 0, 2))
+    def global_view_render(self):
+        global_view = np.array(self._global_view(self._player), np.uint8)
+        return global_view.transpose((1, 0, 2))
 
     def render(self, size=None):
         size = size or self._size
@@ -164,9 +172,6 @@ class Env(BaseClass):
 
     def _obs(self):
         return self.render()
-
-    def _globalmap(self):
-        return self.globalview_render()
 
     def _update_time(self):
         # https://www.desmos.com/calculator/grfbc6rs3h

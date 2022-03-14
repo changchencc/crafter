@@ -8,37 +8,6 @@ import numpy as np
 from PIL import Image, ImageEnhance
 
 
-# indices
-INDICES = {
-    "unknown": 0,
-    "water": 1,
-    "sand": 2,
-    "grass": 3,
-    "tree": 4,
-    "path": 5,
-    "stone": 6,
-    "coal": 7,
-    "iron": 8,
-    "diamond": 9,
-    "lava": 10,
-    "table": 11,
-    "furnace": 12,
-    "player-up": 13,
-    "player-down": 14,
-    "player-left": 15,
-    "player-right": 16,
-    "player-sleep": 17,
-    "plant": 18,
-    "cow": 19,
-    "zombie": 20,
-    "skeleton": 21,
-    "arrow-up": 22,
-    "arrow-down": 23,
-    "arrow-left": 24,
-    "arrow-right": 25,
-}
-
-
 class AttrDict(dict):
 
     __getattr__ = dict.__getitem__
@@ -59,7 +28,6 @@ class World:
         self._chunk_size = chunk_size
         self._mat_names = {i: x for i, x in enumerate([None] + materials)}
         self._mat_ids = {x: i for i, x in enumerate([None] + materials)}
-        self.map = None
         self.reset()
 
     def reset(self, seed=None):
@@ -148,13 +116,6 @@ class World:
         ymax = min(ymin + csy, self.area[1])
         return (xmin, xmax, ymin, ymax)
 
-    def make_map(self):
-        # global topography
-        self.map = np.zeros(tuple(self.area)+(1,))
-        for x in range(self.area[0]):
-            for y in range(self.area[1]):
-                self.map[x, y] = INDICES[self[x, y][0]]
-
 
 class Textures:
     def __init__(self, directory):
@@ -182,7 +143,8 @@ class Textures:
 
 class GlobalView:
     def __init__(self, world, textures, local_grid,
-        blacksheepwall=False):
+        view_type='fullview'
+    ):
         self._world = world
         self._textures = textures
         self._local_grid = np.array(local_grid)
@@ -192,25 +154,63 @@ class GlobalView:
         self._global_offset = self._area // 2
         self._global_center = self._global_grid//2
         self._center = None
-        self._blacksheepwall = blacksheepwall
-        if self._blacksheepwall:
+        self._view_type = view_type
+        if self._view_type:
             self._mask = np.zeros(tuple(self._global_grid)+(1,))
+        # indices
+        self._indices = {
+            "unknown": 0,
+            "water": 1,
+            "sand": 2,
+            "grass": 3,
+            "tree": 4,
+            "path": 5,
+            "stone": 6,
+            "coal": 7,
+            "iron": 8,
+            "diamond": 9,
+            "lava": 10,
+            "table": 11,
+            "furnace": 12,
+            "player-up": 13,
+            "player-down": 14,
+            "player-left": 15,
+            "player-right": 16,
+            "player-sleep": 17,
+            "plant": 18,
+            "plant-ripe": 19,
+            "plant-young": 20,
+            "cow": 21,
+            "zombie": 22,
+            "skeleton": 23,
+            "arrow-up": 24,
+            "arrow-down": 25,
+            "arrow-left": 26,
+            "arrow-right": 27,
+            "fence": 28,
+            "log": 29,
+        }
 
     def __call__(self, player):
-        # update mask and masking
-        if self._blacksheepwall:
+        # draw global topography
+        if self._view_type == 'visited':
             local_center = np.array(player.pos)
             for x in range(self._local_grid[0]):
                 for y in range(self._local_grid[1]):
                     pos = local_center + np.array([x, y]) - self._local_offset
                     if not _inside((0, 0), pos, self._area):
                         continue
-                    self._mask[pos[0], pos[1]] = 1
-            canvas = self._world.map * self._mask
-        else:
-            canvas = copy.copy(self._world.map)
+                    self._mask[pos[0], pos[1]] = 0
+        canvas = np.zeros(tuple(self._global_grid)+(1,))
+        for x in range(self._global_grid[0]):
+            for y in range(self._global_grid[1]):
+                if self._view_type == 'visited':
+                    if self._mask[x, y]:
+                        canvas[pos] = self._indices["unknown"]
+                        continue
+                canvas[x, y] = self._indices[self._world[x, y][0]]
         # draw dynamic entities
-        if self._blacksheepwall:
+        if self._view_type == 'visited':
             center = local_center
             grid = self._local_grid
             offset = self._local_offset
@@ -222,7 +222,7 @@ class GlobalView:
             pos = obj.pos - center + offset
             if not _inside((0, 0), pos, grid):
                 continue
-            canvas[obj.pos[0], obj.pos[1]] = INDICES[obj.texture]
+            canvas[obj.pos[0], obj.pos[1]] = self._indices[obj.texture]
 
         return canvas
 
