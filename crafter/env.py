@@ -80,7 +80,10 @@ class Env(BaseClass):
 
     @property
     def observation_space(self):
-        return BoxSpace(0, 255, tuple(self._size) + (3,), np.uint8)
+        if self._global_view_type == 'notgiven':
+            return BoxSpace(0, 255, tuple(self._size) + (3,), np.uint8)
+        else:
+            return BoxSpace(0, 255, tuple(self._size) + (4,), np.uint8)
 
     @property
     def action_space(self):
@@ -101,10 +104,7 @@ class Env(BaseClass):
         self._world.add(self._player)
         self._unlocked = set()
         worldgen.generate_world(self._world, self._player)
-        if self._global_view_type == 'notgiven':
-            return self._obs()
-        else:
-            return self._obs(), self.global_view_render()
+        return self._obs()
 
     def step(self, action):
         self._step += 1
@@ -146,17 +146,9 @@ class Env(BaseClass):
             "player_pos": self._player.pos,
             "reward": reward,
         }
-        if self._global_view_type != 'notgiven':
-            info.update(
-                {"global_view": self.global_view_render()}
-            )
         if not self._reward:
             reward = 0.0
         return obs, reward, done, info
-
-    def global_view_render(self):
-        global_view = np.array(self._global_view(self._player), np.uint8)
-        return global_view.transpose((1, 0, 2))
 
     def render(self, size=None):
         size = size or self._size
@@ -168,7 +160,12 @@ class Env(BaseClass):
         border = (size - (size // self._view) * self._view) // 2
         (x, y), (w, h) = border, view.shape[:2]
         canvas[x : x + w, y : y + h] = view
-        return canvas.transpose((1, 0, 2))
+        canvas = canvas.transpose((1, 0, 2))
+        if self._global_view_type != 'notgiven':
+            global_view = np.array(self._global_view(self._player), np.uint8)
+            global_view.transpose((1, 0, 2))
+            canvas = np.concatenate([canvas, global_view], axis=-1)
+        return canvas
 
     def _obs(self):
         return self.render()
