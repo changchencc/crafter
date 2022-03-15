@@ -83,7 +83,15 @@ class Env(BaseClass):
         if self._global_view_type == 'notgiven':
             return BoxSpace(0, 255, tuple(self._size) + (3,), np.uint8)
         else:
-            return BoxSpace(0, 255, tuple(self._size) + (4,), np.uint8)
+            return BoxSpace(0, 255, tuple(self._size) + (5,), np.uint8)
+
+    @property
+    def local_view_space(self):
+        return BoxSpace(0, 255, tuple(self._size) + (3,), np.uint8)
+
+    @property
+    def global_view_space(self):
+        return BoxSpace(0, 255, tuple(self._size) + (2,), np.uint8)
 
     @property
     def action_space(self):

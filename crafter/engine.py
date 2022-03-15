@@ -156,7 +156,7 @@ class GlobalView:
         self._center = None
         self._view_type = view_type
         if self._view_type:
-            self._mask = np.zeros(tuple(self._global_grid)+(1,))
+            self._mask = np.ones(tuple(self._global_grid)+(1,))
         # indices
         self._indices = {
             "unknown": 0,
@@ -201,14 +201,14 @@ class GlobalView:
                     if not _inside((0, 0), pos, self._area):
                         continue
                     self._mask[pos[0], pos[1]] = 0
-        canvas = np.zeros(tuple(self._global_grid)+(1,))
+        canvas = np.zeros(tuple(self._global_grid)+(2,))
         for x in range(self._global_grid[0]):
             for y in range(self._global_grid[1]):
                 if self._view_type == 'visited':
                     if self._mask[x, y]:
-                        canvas[pos] = self._indices["unknown"]
+                        canvas[x, y, 0] = self._indices["unknown"]
                         continue
-                canvas[x, y] = self._indices[self._world[x, y][0]]
+                canvas[x, y, 0] = self._indices[self._world[x, y][0]]
         # draw dynamic entities
         if self._view_type == 'visited':
             center = local_center
@@ -222,7 +222,7 @@ class GlobalView:
             pos = obj.pos - center + offset
             if not _inside((0, 0), pos, grid):
                 continue
-            canvas[obj.pos[0], obj.pos[1]] = self._indices[obj.texture]
+            canvas[obj.pos[0], obj.pos[1], 1] = self._indices[obj.texture]
 
         return canvas
 
