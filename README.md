@@ -150,3 +150,4 @@ a separate repository.
 Please [open an issue][issues] on Github.
 
 [issues]: https://github.com/danijar/crafter/issues
+
