@@ -26,7 +26,7 @@ except ImportError:
 class Env(BaseClass):
     def __init__(
         self,
-        level=6,
+        level=3,
         area=(64, 64),
         view=(9, 9),
         size=(64, 64),
@@ -37,6 +37,14 @@ class Env(BaseClass):
         view = np.array(view if hasattr(view, "__len__") else (view, view))
         size = np.array(size if hasattr(size, "__len__") else (size, size))
         seed = np.random.randint(0, 2 ** 31 - 1) if seed is None else seed
+        assert level in [1, 2, 3, 4], "only support level in [1, 2, 3, 4]."
+        """
+        level:
+        - 1: no health, no die, no enemy
+        - 2: health, no die, no enemy
+        - 3: health, die, no enemy
+        - 4: health, die, enemy (original)
+        """
         self.level = level
         self._area = area
         self._view = view
