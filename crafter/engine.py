@@ -2,6 +2,7 @@ import collections
 import functools
 import pathlib
 
+import copy
 import imageio
 import numpy as np
 from PIL import Image, ImageEnhance
@@ -141,8 +142,89 @@ class Textures:
 
 
 class GlobalView:
+    def __init__(self, world, textures, local_grid,
+        view_type='fullview'
+    ):
+        self._world = world
+        self._textures = textures
+        self._local_grid = np.array(local_grid)
+        self._local_offset = self._local_grid // 2
+        self._area = np.array(self._world.area)
+        self._global_grid = self._area
+        self._global_offset = self._area // 2
+        self._global_center = self._global_grid//2
+        self._center = None
+        self._view_type = view_type
+        if self._view_type:
+            self._mask = np.ones(tuple(self._global_grid)+(1,))
+        # indices
+        self._indices = {
+            "unknown": 0,
+            "water": 1,
+            "sand": 2,
+            "grass": 3,
+            "tree": 4,
+            "path": 5,
+            "stone": 6,
+            "coal": 7,
+            "iron": 8,
+            "diamond": 9,
+            "lava": 10,
+            "table": 11,
+            "furnace": 12,
+            "player-up": 13,
+            "player-down": 14,
+            "player-left": 15,
+            "player-right": 16,
+            "player-sleep": 17,
+            "plant": 18,
+            "plant-ripe": 19,
+            "plant-young": 20,
+            "cow": 21,
+            "zombie": 22,
+            "skeleton": 23,
+            "arrow-up": 24,
+            "arrow-down": 25,
+            "arrow-left": 26,
+            "arrow-right": 27,
+            "fence": 28,
+            "log": 29,
+        }
 
-    pass
+    def __call__(self, player):
+        # draw global topography
+        if self._view_type == 'visited':
+            local_center = np.array(player.pos)
+            for x in range(self._local_grid[0]):
+                for y in range(self._local_grid[1]):
+                    pos = local_center + np.array([x, y]) - self._local_offset
+                    if not _inside((0, 0), pos, self._area):
+                        continue
+                    self._mask[pos[0], pos[1]] = 0
+        canvas = np.zeros(tuple(self._global_grid)+(2,))
+        for x in range(self._global_grid[0]):
+            for y in range(self._global_grid[1]):
+                if self._view_type == 'visited':
+                    if self._mask[x, y]:
+                        canvas[x, y, 0] = self._indices["unknown"]
+                        continue
+                canvas[x, y, 0] = self._indices[self._world[x, y][0]]
+        # draw dynamic entities
+        if self._view_type == 'visited':
+            center = local_center
+            grid = self._local_grid
+            offset = self._local_offset
+        else:
+            center = self._global_center
+            grid = self._global_grid
+            offset = self._global_offset
+        for obj in self._world.objects:
+            pos = obj.pos - center + offset
+            if not _inside((0, 0), pos, grid):
+                continue
+            canvas[obj.pos[0], obj.pos[1], 1] = self._indices[obj.texture]
+
+        return canvas
 
 
 class UncoverView:

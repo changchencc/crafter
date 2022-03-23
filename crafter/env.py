@@ -33,6 +33,7 @@ class Env(BaseClass):
         reward=True,
         length=10000,
         seed=None,
+        global_view_type='notgiven' # {notgiven|fullview|visited}
     ):
         view = np.array(view if hasattr(view, "__len__") else (view, view))
         size = np.array(size if hasattr(size, "__len__") else (size, size))
@@ -46,6 +47,7 @@ class Env(BaseClass):
         - 4: health, die, enemy (original)
         """
         self.level = level
+        self._global_view_type = global_view_type
         self._area = area
         self._view = view
         self._size = size
@@ -56,6 +58,11 @@ class Env(BaseClass):
         self._world = engine.World(level, area, constants.materials, (12, 12))
         self._textures = engine.Textures(constants.root / "assets")
         item_rows = int(np.ceil(len(constants.items) / view[0]))
+        if global_view_type != 'notgiven':
+            self._global_view = engine.GlobalView(
+                self._world, self._textures, [view[0], view[1] - item_rows],
+                view_type=global_view_type
+            )
         self._local_view = engine.LocalView(
             self._world, self._textures, [view[0], view[1] - item_rows]
         )
@@ -81,7 +88,18 @@ class Env(BaseClass):
 
     @property
     def observation_space(self):
+        if self._global_view_type == 'notgiven':
+            return BoxSpace(0, 255, tuple(self._size) + (3,), np.uint8)
+        else:
+            return BoxSpace(0, 255, tuple(self._size) + (5,), np.uint8)
+
+    @property
+    def local_view_space(self):
         return BoxSpace(0, 255, tuple(self._size) + (3,), np.uint8)
+
+    @property
+    def global_view_space(self):
+        return BoxSpace(0, 255, tuple(self._size) + (2,), np.uint8)
 
     @property
     def action_space(self):
@@ -168,7 +186,12 @@ class Env(BaseClass):
         border = (size - (size // self._view) * self._view) // 2
         (x, y), (w, h) = border, view.shape[:2]
         canvas[x : x + w, y : y + h] = view
-        return canvas.transpose((1, 0, 2))
+        canvas = canvas.transpose((1, 0, 2))
+        if self._global_view_type != 'notgiven':
+            global_view = np.array(self._global_view(self._player), np.uint8)
+            global_view.transpose((1, 0, 2))
+            canvas = np.concatenate([canvas, global_view], axis=-1)
+        return canvas
 
     def _obs(self):
         return self.render()
